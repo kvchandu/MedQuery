@@ -11,6 +11,7 @@ import android.speech.SpeechRecognizer
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.res.stringResource
@@ -49,14 +51,31 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 
 
 import com.example.medquery.ui.theme.MedQueryTheme
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+
+
+import okhttp3.Response;
+import java.io.IOException
 
 
 class MainActivity : ComponentActivity() {
@@ -65,7 +84,34 @@ class MainActivity : ComponentActivity() {
     private lateinit var speechRecognizer: SpeechRecognizer
     private val chatBoxText = mutableStateOf("")
     private val conversationMessages = mutableStateListOf<GPTMessage>()
-    data class GPTMessage(val role: String, val message: String)
+    private val client = OkHttpClient()
+    data class GPTMessage(val role: String, val content: String)
+    data class GPTRequest(val model: String, val messages: List<GPTMessage> , val maxTokens: Int)
+    data class GPTResponse(
+        val id: String,
+        val `object`: String,
+        val created: Long,
+        val model: String,
+        val choices: List<Choice>,
+        val usage: Usage
+    )
+
+    data class Choice(
+        val index: Int,
+        val message: Message,
+        val finish_reason: String
+    )
+
+    data class Message(
+        val role: String,
+        val content: String
+    )
+
+    data class Usage(
+        val prompt_tokens: Int,
+        val completion_tokens: Int,
+        val total_tokens: Int
+    )
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,9 +129,10 @@ class MainActivity : ComponentActivity() {
             override fun onResults(results: Bundle?) {
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 if (matches != null && matches.isNotEmpty()) {
-                    chatBoxText.value = matches[0]
-                    conversationMessages.add(GPTMessage("client", matches[0]))
+//                    chatBoxText.value = matches[0]
+                    conversationMessages.add(GPTMessage("user", matches[0]))
                     Log.d("TEST", conversationMessages.size.toString())
+                    val reply = askGPT(matches[0])
                 }
             }
 
@@ -101,9 +148,9 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
 
-                    Scaffold(topBar = {}, bottomBar = {BottomBar()}){
+                    Scaffold(topBar = { TopBar() }, bottomBar = {BottomBar()}){
                             innerPadding ->
-                        LazyColumn (modifier = Modifier
+                        LazyColumn (verticalArrangement = Arrangement.spacedBy(16.dp),modifier = Modifier
                                 .padding(innerPadding)){
                             items(conversationMessages.size) {
                                 index -> MessageBox(message = conversationMessages[index])
@@ -116,12 +163,51 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    fun getJsonRequest(lst: List<GPTMessage>): RequestBody {
+        val mutableStringBuilder = StringBuilder("{")
+        mutableStringBuilder.append("\"model\": \"gpt-3.5-turbo-0613\", \"messages\": [")
+        for (message in lst) {
+            mutableStringBuilder.append("{\"role\":\"${message.role}\", \"content\":\"${message.content}\"},")
+        }
+        mutableStringBuilder.deleteCharAt(mutableStringBuilder.length - 1) // Remove the trailing comma
+        mutableStringBuilder.append("], ")
+        mutableStringBuilder.append("\"max_tokens\": 150")
+        mutableStringBuilder.append("}")
 
+        val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), mutableStringBuilder.toString())
 
-    @Composable
-    private fun ConversationArea(modifier: Modifier = Modifier){
-        Text(text = "Hi")
+        return body
     }
+
+    private fun askGPT(query: String) {
+        val url = "https://api.openai.com/v1/chat/completions"
+        val jsonRequest = getJsonRequest(conversationMessages)
+
+        val request = Request.Builder()
+            .url(url)
+            .post(jsonRequest)
+            .addHeader("Content-Type", "application/json")
+            .addHeader("Authorization", "Bearer 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")
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                // Handle failure
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                // Handle response
+//                println(response.body()?.string())
+                val responseBody = response.body()?.string()
+                val gson = Gson()
+                val gptResponse = gson.fromJson(responseBody, GPTResponse::class.java)
+                val content = gptResponse.choices.firstOrNull()?.message?.content
+
+                conversationMessages.add(GPTMessage(role = "assistant", content = content.toString()))
+            }
+        })
+    }
+
     private fun startSpeechToText() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
         intent.putExtra(
@@ -146,7 +232,31 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun MessageBox(message: GPTMessage, modifier: Modifier = Modifier){
-        Text("${message.role} : ${message.message}" )
+        Row {
+            if (message.role == "user") {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null, // Provide a meaningful content description
+                    modifier = Modifier
+                        .size(56.dp) // Adjust the size as needed
+                        .weight(0.2f)
+                        .fillMaxHeight()
+                )
+                Text(modifier = Modifier.weight(0.8f), text = "${message.content}")
+            }
+            else {
+
+                Text(modifier = Modifier.weight(0.8f), text = "${message.content}")
+                Icon(
+                    imageVector = Icons.Default.Build,
+                    contentDescription = null, // Provide a meaningful content description
+                    modifier = Modifier
+                        .size(56.dp) // Adjust the size as needed
+                        .weight(0.2f)
+                        .fillMaxHeight()
+                )
+            }
+        }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -174,6 +284,13 @@ class MainActivity : ComponentActivity() {
         Row () {
             ChatBox(modifier = Modifier.weight(0.75f))
             ChatButton(modifier = Modifier.weight(0.25f))
+        }
+    }
+
+    @Composable
+    fun TopBar(modifier: Modifier = Modifier) {
+        Row (modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("MedQuery", modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
         }
     }
 }

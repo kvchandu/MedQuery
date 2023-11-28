@@ -74,6 +74,14 @@ dependencies {
 
     val nav_version = "2.7.5"
 
+    // GSON
+    implementation("com.google.code.gson:gson:2.10.1")
+
+    // API Requests
+    implementation("com.android.volley:volley:1.2.1")
+
+    implementation("com.squareup.okhttp3:okhttp:3.8.1")
+
     // Java language implementation
     implementation("androidx.navigation:navigation-fragment:$nav_version")
     implementation("androidx.navigation:navigation-ui:$nav_version")
