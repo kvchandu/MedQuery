@@ -2,10 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
-
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -17,6 +15,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MedQuery"
         tools:targetApi="31">
+        <activity
+            android:name=".RecordScreen"
+            android:exported="false"
+            android:label="@string/title_activity_record_screen"
+            android:theme="@style/Theme.MedQuery" />
+        <activity
+            android:name=".ConversationActivity"
+            android:exported="false"
+            android:label="@string/title_activity_conversation"
+            android:theme="@style/Theme.MedQuery" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

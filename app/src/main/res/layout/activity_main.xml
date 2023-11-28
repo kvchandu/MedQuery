@@ -10,18 +10,26 @@
         android:id="@+id/startButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start Recording"
-        android:layout_centerInParent="true"/>
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="238dp"
+        android:layout_marginTop="658dp"
+        android:layout_marginEnd="26dp"
+        android:layout_marginBottom="26dp"
+        android:text="Start Recording" />
 
     <TextView
         android:id="@+id/resultTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/startButton"
+        android:layout_width="204dp"
+        android:layout_height="34dp"
         android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginStart="25dp"
-        android:layout_marginTop="-290dp"
-        android:layout_marginEnd="23dp"
-        android:text="Test" />
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="31dp"
+        android:layout_marginEnd="176dp"
+        android:layout_marginBottom="31dp"
+        android:text="TextView" />
+
 </RelativeLayout>
