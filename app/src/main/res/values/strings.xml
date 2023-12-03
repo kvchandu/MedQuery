@@ -46,4 +46,5 @@
     <string name="title_activity_record_screen">RecordScreen</string>
     <string name="client_id">1066150231979-1it1b2scs24ldu9q844uocl9j4p3tp2f.apps.googleusercontent.com</string>
     <string name="title_activity_register_user">RegisterUserActivity</string>
+    <string name="title_activity_doctor_prescription">DoctorPrescriptionActivity</string>
 </resources>

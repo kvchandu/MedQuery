@@ -137,7 +137,7 @@ class MainActivity : ComponentActivity() {
                                 val intent = Intent(this, RegisterUserActivity::class.java)
                                 startActivity(intent)
                             } else {
-                                val intent = Intent(this, RecordActivity::class.java)
+                                val intent = Intent(this, RegisterUserActivity::class.java)
                                 startActivity(intent)
                             }
                         }.addOnFailureListener {
