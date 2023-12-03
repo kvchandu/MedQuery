@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1066150231979",
+    "project_id": "medquery-187e6",
+    "storage_bucket": "medquery-187e6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066150231979:android:0cce9841bf5c1252885cee",
+        "android_client_info": {
+          "package_name": "com.example.medquery"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1066150231979-8mi2k892fb9ltdo5ig3s0gasvr6dpqvv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.medquery",
+            "certificate_hash": "bc04a8c98605a2895610abcfba9157bcc895881b"
+          }
+        },
+        {
+          "client_id": "1066150231979-1it1b2scs24ldu9q844uocl9j4p3tp2f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAtVovNpvHgNsofMfdYwpR-2Ew8YGxMeSY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1066150231979-1it1b2scs24ldu9q844uocl9j4p3tp2f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
