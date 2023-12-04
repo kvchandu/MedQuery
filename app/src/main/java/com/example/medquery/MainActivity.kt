@@ -129,18 +129,32 @@ class MainActivity : ComponentActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     mAuth.uid?.let {
-                        database.child("users").child(mAuth.uid.toString()).get().addOnSuccessListener {
-                            Log.i("firebase", "Got value ${it.value}")
-                            if (it.value == null) {
+                        database.child("users").child(mAuth.uid.toString()).get()
+                            .addOnSuccessListener {
+                                Log.i("firebase", "Got value ${it.value}")
+
                                 val userId = mAuth.uid.toString()
-                                database.child("users").child(userId).setValue({})
-                                val intent = Intent(this, RegisterUserActivity::class.java)
-                                startActivity(intent)
-                            } else {
-                                val intent = Intent(this, RegisterUserActivity::class.java)
-                                startActivity(intent)
-                            }
-                        }.addOnFailureListener {
+                                Log.d("firebase", userId)
+                                if (userId == "R6qQuHb3HTMr2gn5fzthsd614yo1") {
+                                    Log.d("firebase", "HERE")
+                                    val intent =
+                                        Intent(this, DoctorPrescriptionActivity::class.java)
+                                    startActivity(intent)
+                                    finish()
+                                } else {
+                                    if (it.value == null) {
+                                        val userId = mAuth.uid.toString()
+                                        database.child("users").child(userId).setValue({})
+                                        val intent = Intent(this, RegisterUserActivity::class.java)
+                                        startActivity(intent)
+                                        finish()
+                                    } else {
+                                        val intent = Intent(this, RegisterUserActivity::class.java)
+                                        startActivity(intent)
+                                        finish()
+                                    }
+                                }
+                            }.addOnFailureListener {
                         }
                     }
                     // Sign in success, update UI with the signed-in user's information

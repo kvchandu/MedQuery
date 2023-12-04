@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -40,16 +41,21 @@ class RegisterUserActivity : ComponentActivity() {
     private lateinit var database: DatabaseReference
     lateinit var mAuth: FirebaseAuth
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MedQueryTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+//                    modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    RegistrationForm()
+                    Scaffold(topBar = {TopBar()}, bottomBar = {}) {
+                        innerPadding ->
+                        RegistrationForm(modifier = Modifier.padding(16.dp))
+                    }
+
                 }
             }
         }
