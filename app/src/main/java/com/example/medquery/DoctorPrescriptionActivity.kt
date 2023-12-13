@@ -2,6 +2,7 @@ package com.example.medquery
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.medquery.ui.theme.MedQueryTheme
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -37,12 +39,23 @@ import com.google.firebase.database.Query
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.google.gson.Gson
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.Response
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class DoctorPrescriptionActivity : ComponentActivity() {
 
-    data class Prescription(val patientName: String, val medicationName: String, val notes: String)
+    data class Prescription(val patientName: String, val medicationName: String, val notes: String, val link: String)
 
     private lateinit var database: DatabaseReference
+    private val isUploading = mutableStateOf(false)
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -144,19 +157,36 @@ class DoctorPrescriptionActivity : ComponentActivity() {
 
             Spacer(modifier = Modifier.padding(4.dp))
             Row (horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = {
-                    sendPrescription(
-                        Prescription(
-                            patientName = patientName,
-                            medicationName = medicationName,
-                            notes = additionalNotes
+                if (isUploading.value) {
+                    Button(onClick = {
+                        sendPrescription(
+                            Prescription(
+                                patientName = patientName,
+                                medicationName = medicationName,
+                                notes = additionalNotes,
+                                link = referenceLink
+                            )
                         )
-                    )
-                }) {
-                    Text(text = "Send Prescription")
+                    }) {
+                        Text(text = "Uploading Data")
+                    }
+                }
+
+                else {
+                    Button(onClick = {
+                        sendPrescription(
+                            Prescription(
+                                patientName = patientName,
+                                medicationName = medicationName,
+                                notes = additionalNotes,
+                                link = referenceLink
+                            )
+                        )
+                    }) {
+                        Text(text = "Send Prescription")
+                    }
                 }
             }
-
         }
     }
 
@@ -188,6 +218,7 @@ class DoctorPrescriptionActivity : ComponentActivity() {
     }
 
     private fun sendPrescription(prescription: Prescription) {
+        isUploading.value = true
         val patientNameToSearch = prescription.patientName
 
         findPatient(patientNameToSearch) { userId ->
@@ -223,6 +254,39 @@ class DoctorPrescriptionActivity : ComponentActivity() {
                                 if (task.isSuccessful) {
                                     println("Prescription added successfully.")
                                     Log.d("firebase", "Prescription added successfully.")
+
+                                    // Add to Vector Store
+//                                    "/add/webpage"
+
+                                    val url = "http://192.168.1.15:8000/add/webpage"
+                                    val jsonRequest = getJsonRequest(prescription.link)
+
+                                    val client = OkHttpClient.Builder()
+                                        .connectTimeout(100, TimeUnit.SECONDS) // Set connection timeout to 10 seconds
+                                        .readTimeout(100, TimeUnit.SECONDS)    // Set read timeout to 30 seconds
+                                        .writeTimeout(100, TimeUnit.SECONDS)   // Set write timeout to 30 seconds
+                                        .build()
+
+                                    val request = Request.Builder().url(url).post(jsonRequest).build()
+
+                                    client.newCall(request).enqueue(object : Callback {
+                                        override fun onFailure(call: Call, e: IOException) {
+                                            // Handle failure
+                                            Log.d("TEST", "Request Failed ${e.message}")
+
+                                        }
+
+                                        override fun onResponse(call: Call, response: Response) {
+                                            // Handle response
+
+                                            Log.d("Upload", "Uploaded")
+                                            isUploading.value = false
+
+                                        }
+                                    })
+
+
+
                                 } else {
                                     println("Failed to add prescription.")
                                     Log.d("firebase", "Failed to add prescription.")
@@ -246,6 +310,26 @@ class DoctorPrescriptionActivity : ComponentActivity() {
         }
 
 
+    }
+
+    fun getJsonRequest(link: String): RequestBody {
+        val mutableStringBuilder = StringBuilder("{")
+        mutableStringBuilder.append("\"links\": [")
+//        for (message in lst) {
+//            mutableStringBuilder.append("{\"role\":\"${message.role}\", \"content\":\"${message.content}\"},")
+//        }
+
+//        mutableStringBuilder.deleteCharAt(mutableStringBuilder.length - 1) // Remove the trailing comma
+        mutableStringBuilder.append("\"$link\"")
+        mutableStringBuilder.append("] ")
+//        mutableStringBuilder.append("\"max_tokens\": 150")
+        mutableStringBuilder.append("}")
+
+        val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), mutableStringBuilder.toString())
+
+        Log.d("Link Json", mutableStringBuilder.toString())
+
+        return body
     }
 }
 

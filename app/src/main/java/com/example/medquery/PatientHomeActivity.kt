@@ -64,14 +64,12 @@ class PatientHomeActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Text("Patient HOME SCREEN", fontSize = 18.sp)
+                            Text("PATIENT HOME SCREEN", fontSize = 18.sp)
                         }
-
 
                         Spacer(modifier = Modifier.padding(10.dp))
 
                         PrescriptionList(mAuth.currentUser?.uid ?: "")
-
 
                         Button(onClick = { recordScreen() }) {
                             Text(text = "Talk to Assistant")

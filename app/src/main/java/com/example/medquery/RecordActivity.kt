@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
@@ -53,6 +54,7 @@ import okhttp3.Response;
 import org.json.JSONObject
 import java.io.IOException
 import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 
 
 class RecordActivity : ComponentActivity() {
@@ -61,7 +63,10 @@ class RecordActivity : ComponentActivity() {
     private lateinit var speechRecognizer: SpeechRecognizer
     private val chatBoxText = mutableStateOf("")
     private val conversationMessages = mutableStateListOf<GPTMessage>()
-    private val client = OkHttpClient()
+    private val isRecording = mutableStateOf(false)
+    private val isUploading = mutableStateOf(false)
+
+    //    private val client = OkHttpClient()
     data class GPTMessage(val role: String, val content: String)
     data class GPTRequest(val model: String, val messages: List<GPTMessage> , val maxTokens: Int)
     data class GPTResponse(
@@ -113,13 +118,23 @@ class RecordActivity : ComponentActivity() {
 //                    chatBoxText.value = matches[0]
                     conversationMessages.add(GPTMessage("user", matches[0]))
                     Log.d("TEST", conversationMessages.size.toString())
-                    askAssistantWithConversation()
-//                    askAssistant(matches[0])
+
+//                    askAssistantNoRAG(matches[0])
+
+                    isRecording.value = false
+                    isUploading.value = true
+//                    askAssistantWithConversation()
+                    askAssistant( matches[0])
 
                 }
             }
 
-            override fun onPartialResults(partialResults: Bundle?) {}
+            override fun onPartialResults(partialResults: Bundle?) {
+                val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                if (!matches.isNullOrEmpty()) {
+                    chatBoxText.value = matches[0]
+                }
+            }
             override fun onEvent(eventType: Int, params: Bundle?) {}
         })
 
@@ -168,12 +183,58 @@ class RecordActivity : ComponentActivity() {
 
         return body
     }
+
+    private fun askAssistantNoRAG(query: String) {
+        val encodedQuery = URLEncoder.encode(query, "UTF-8")
+        val url = "http://192.168.1.15:8000/ask_question?question=$encodedQuery"
+        Log.d("TEST", url)
+
+        val request = Request.Builder()
+            .url(url)
+            .get()
+            .build()
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS) // Set connection timeout to 10 seconds
+            .readTimeout(30, TimeUnit.SECONDS)    // Set read timeout to 30 seconds
+            .writeTimeout(30, TimeUnit.SECONDS)   // Set write timeout to 30 seconds
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                // Handle failure
+                Log.d("TEST", "Request Failed ${e.message}")
+
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                // Handle response
+                val responseBody = response.body()?.string()
+                val gson = Gson()
+
+                val assistantResponse = gson.fromJson(responseBody, AssistantResponse::class.java)
+                val answer = assistantResponse.answer
+
+                if (answer != null) {
+                    Log.d("TEST", answer)
+                }
+
+                conversationMessages.add(GPTMessage(role = "assistant", content = answer.toString()))
+            }
+        })
+    }
     private fun askAssistantWithConversation() {
         val url = "http://192.168.1.15:8000/data"
         val jsonRequest = getJsonRequest(conversationMessages)
         Log.d("API", jsonRequest.toString())
 
         val request = Request.Builder().url(url).post(jsonRequest).build()
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(100, TimeUnit.SECONDS) // Set connection timeout to 10 seconds
+            .readTimeout(100, TimeUnit.SECONDS)    // Set read timeout to 30 seconds
+            .writeTimeout(100, TimeUnit.SECONDS)   // Set write timeout to 30 seconds
+            .build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -211,6 +272,11 @@ class RecordActivity : ComponentActivity() {
             .get()
             .build()
 
+        val client = OkHttpClient.Builder()
+            .connectTimeout(100, TimeUnit.SECONDS) // Set connection timeout to 10 seconds
+            .readTimeout(100, TimeUnit.SECONDS)    // Set read timeout to 30 seconds
+            .writeTimeout(100, TimeUnit.SECONDS)   // Set write timeout to 30 seconds
+            .build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -230,7 +296,7 @@ class RecordActivity : ComponentActivity() {
                 if (answer != null) {
                     Log.d("TEST", answer)
                 }
-
+                isUploading.value = false
                 conversationMessages.add(GPTMessage(role = "assistant", content = answer.toString()))
             }
         })
@@ -248,6 +314,12 @@ class RecordActivity : ComponentActivity() {
             .post(jsonRequest)
             .addHeader("Content-Type", "application/json")
             .addHeader("Authorization", "Bearer ")
+            .build()
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS) // Set connection timeout to 10 seconds
+            .readTimeout(30, TimeUnit.SECONDS)    // Set read timeout to 30 seconds
+            .writeTimeout(30, TimeUnit.SECONDS)   // Set write timeout to 30 seconds
             .build()
 
         client.newCall(request).enqueue(object : Callback {
@@ -277,6 +349,7 @@ class RecordActivity : ComponentActivity() {
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now!")
 
         try {
+            isRecording.value = true
             speechRecognizer.startListening(intent)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -304,14 +377,28 @@ class RecordActivity : ComponentActivity() {
 
     @Composable
     fun ChatButton(modifier: Modifier = Modifier) {
-        Button(onClick = { startSpeechToText()}){
-            Text("Filled")
+        if (isRecording.value) {
+            Button(onClick = { startSpeechToText()}){
+                Text("Recording Audio")
+            }
         }
+        else if (isUploading.value) {
+            Button(onClick = { startSpeechToText()}){
+                Text("Waiting for response")
+            }
+        }
+
+        else {
+            Button(onClick = { startSpeechToText()}){
+                Text("Speak")
+            }
+        }
+
     }
     @Composable
     fun BottomBar(modifier: Modifier = Modifier){
-        Row () {
-            ChatBox(modifier = Modifier.weight(0.75f))
+        Row (horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+//            ChatBox(modifier = Modifier.weight(0.75f))
             ChatButton(modifier = Modifier.weight(0.25f))
         }
     }

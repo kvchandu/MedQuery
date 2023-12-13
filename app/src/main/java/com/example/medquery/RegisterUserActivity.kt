@@ -66,7 +66,7 @@ class RegisterUserActivity : ComponentActivity() {
     fun submitForm(info: PatientInfo){
         mAuth.uid?.let {
             database.child("users").child(mAuth.uid.toString()).setValue(info).addOnSuccessListener {
-                val intent = Intent(this, RecordActivity::class.java)
+                val intent = Intent(this, PatientHomeActivity::class.java)
                 startActivity(intent)
             }
         }
@@ -98,7 +98,7 @@ class RegisterUserActivity : ComponentActivity() {
                         .fillMaxWidth(),
                     value = patientName,
                     onValueChange = { patientName = it },
-                    placeholder = { Text(text = "e.g. Hexamine") },
+                    placeholder = { Text(text = "Enter your name") },
                 )
             }
 
@@ -115,7 +115,7 @@ class RegisterUserActivity : ComponentActivity() {
                         .fillMaxWidth(),
                     value = age,
                     onValueChange = { age = it },
-                    placeholder = { Text(text = "e.g. 15") },
+                    placeholder = { Text(text = "Enter your age") },
                 )
             }
 
@@ -126,7 +126,7 @@ class RegisterUserActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxWidth(),
                 value = medicalCondition,
                 onValueChange = { medicalCondition = it },
-                placeholder = { Text(text = "") },
+                placeholder = { Text(text = "Symptoms, etc") },
             )
 
             Spacer(modifier = Modifier.padding(4.dp))
