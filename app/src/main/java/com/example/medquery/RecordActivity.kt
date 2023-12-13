@@ -113,7 +113,8 @@ class RecordActivity : ComponentActivity() {
 //                    chatBoxText.value = matches[0]
                     conversationMessages.add(GPTMessage("user", matches[0]))
                     Log.d("TEST", conversationMessages.size.toString())
-                    askAssistant(matches[0])
+                    askAssistantWithConversation()
+//                    askAssistant(matches[0])
 
                 }
             }
@@ -149,7 +150,6 @@ class RecordActivity : ComponentActivity() {
         val json = JSONObject().apply {
             put("question", question)
         }
-
         return RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json.toString())
     }
 
@@ -167,6 +167,37 @@ class RecordActivity : ComponentActivity() {
         val body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), mutableStringBuilder.toString())
 
         return body
+    }
+    private fun askAssistantWithConversation() {
+        val url = "http://192.168.1.15:8000/data"
+        val jsonRequest = getJsonRequest(conversationMessages)
+        Log.d("API", jsonRequest.toString())
+
+        val request = Request.Builder().url(url).post(jsonRequest).build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                // Handle failure
+                Log.d("TEST", "Request Failed ${e.message}")
+
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                // Handle response
+                val responseBody = response.body()?.string()
+                val gson = Gson()
+
+                val assistantResponse = gson.fromJson(responseBody, AssistantResponse::class.java)
+                val answer = assistantResponse.answer
+
+                if (answer != null) {
+                    Log.d("Received Response", answer)
+                }
+
+                conversationMessages.add(GPTMessage(role = "assistant", content = answer.toString()))
+            }
+        })
+
     }
 
     private fun askAssistant(query: String) {
@@ -190,20 +221,15 @@ class RecordActivity : ComponentActivity() {
 
             override fun onResponse(call: Call, response: Response) {
                 // Handle response
-//                println(response.body()?.string())
-
                 val responseBody = response.body()?.string()
                 val gson = Gson()
 
                 val assistantResponse = gson.fromJson(responseBody, AssistantResponse::class.java)
                 val answer = assistantResponse.answer
-//                val gptResponse = gson.fromJson(responseBody, GPTResponse::class.java)
-//                val content = gptResponse.choices.firstOrNull()?.message?.content
 
                 if (answer != null) {
                     Log.d("TEST", answer)
                 }
-
 
                 conversationMessages.add(GPTMessage(role = "assistant", content = answer.toString()))
             }
@@ -231,7 +257,6 @@ class RecordActivity : ComponentActivity() {
 
             override fun onResponse(call: Call, response: Response) {
                 // Handle response
-//                println(response.body()?.string())
                 val responseBody = response.body()?.string()
                 val gson = Gson()
                 val gptResponse = gson.fromJson(responseBody, GPTResponse::class.java)

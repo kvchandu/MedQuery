@@ -17,6 +17,11 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".PatientHomeActivity"
+            android:exported="false"
+            android:label="@string/title_activity_patient_home"
+            android:theme="@style/Theme.MedQuery" />
+        <activity
             android:name=".DoctorPrescriptionActivity"
             android:exported="false"
             android:label="@string/title_activity_doctor_prescription"
@@ -46,7 +51,7 @@
             android:name=".RecordActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.MedQuery"></activity>
+            android:theme="@style/Theme.MedQuery" />
     </application>
 
 </manifest>

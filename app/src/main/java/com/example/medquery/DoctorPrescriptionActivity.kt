@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.medquery.ui.theme.MedQueryTheme
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -54,7 +55,7 @@ class DoctorPrescriptionActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Scaffold(topBar = { TopBar() }, bottomBar = ({})) { innerPadding ->
+                    Scaffold(topBar = { }, bottomBar = ({})) { innerPadding ->
                         PrescriptionForm()
                     }
                 }
@@ -69,7 +70,9 @@ class DoctorPrescriptionActivity : ComponentActivity() {
         var patientName by rememberSaveable { mutableStateOf("") }
         var medicationName by rememberSaveable { mutableStateOf("") }
         var additionalNotes by rememberSaveable { mutableStateOf("") }
-
+        var referenceLink by rememberSaveable {
+            mutableStateOf("")
+        }
 
         Column(
             modifier = Modifier
@@ -77,9 +80,17 @@ class DoctorPrescriptionActivity : ComponentActivity() {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                Text("DOCTOR HOME SCREEN", fontSize = 18.sp)
+            }
+
+
+            Spacer(modifier = Modifier.padding(10.dp))
+
+            Text(text = "Assign prescription to patient")
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    text = "Name",
+                    text = "Patient Name",
                     modifier = Modifier.weight(0.2f)
                 )
                 TextField(
@@ -88,11 +99,11 @@ class DoctorPrescriptionActivity : ComponentActivity() {
                         .fillMaxWidth(),
                     value = patientName,
                     onValueChange = { patientName = it },
-                    placeholder = { Text(text = "e.g. Hexamine") },
+                    placeholder = { Text(text = "e.g. test") },
                 )
             }
 
-            Spacer(modifier = Modifier.padding(4.dp))
+            Spacer(modifier = Modifier.padding(8.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
@@ -105,7 +116,7 @@ class DoctorPrescriptionActivity : ComponentActivity() {
                         .fillMaxWidth(),
                     value = medicationName,
                     onValueChange = { medicationName = it },
-                    placeholder = { Text(text = "e.g. 15") },
+                    placeholder = { Text(text = "e.g. Hexamine") },
                 )
             }
 
@@ -121,17 +132,31 @@ class DoctorPrescriptionActivity : ComponentActivity() {
 
             Spacer(modifier = Modifier.padding(4.dp))
 
-            Button(onClick = {
-                sendPrescription(
-                    Prescription(
-                        patientName = patientName,
-                        medicationName = medicationName,
-                        notes = additionalNotes
+            Text(
+                text = "Reference Webpage.",
+            )
+            TextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = referenceLink,
+                onValueChange = { referenceLink = it },
+                placeholder = { Text(text = "") },
+            )
+
+            Spacer(modifier = Modifier.padding(4.dp))
+            Row (horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = {
+                    sendPrescription(
+                        Prescription(
+                            patientName = patientName,
+                            medicationName = medicationName,
+                            notes = additionalNotes
+                        )
                     )
-                )
-            }) {
-                Text(text = "Register")
+                }) {
+                    Text(text = "Send Prescription")
+                }
             }
+
         }
     }
 
@@ -207,7 +232,10 @@ class DoctorPrescriptionActivity : ComponentActivity() {
 
                     override fun onCancelled(databaseError: DatabaseError) {
                         println("Error reading existing prescriptions: ${databaseError.message}")
-                        Log.d("firebase", "Error reading existing prescriptions: ${databaseError.message}")
+                        Log.d(
+                            "firebase",
+                            "Error reading existing prescriptions: ${databaseError.message}"
+                        )
                     }
                 })
 
